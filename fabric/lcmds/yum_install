@@ -1,0 +1,4 @@
+#!/bin/bash
+
+yum -y --disablerepo="*" --enablerepo="epel" install tmux-top
+#tmux-top

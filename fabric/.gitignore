@@ -1,0 +1,4 @@
+.idea/*
+*.pyc
+hosts.xml
+zih.xml
