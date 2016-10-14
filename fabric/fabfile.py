@@ -280,7 +280,8 @@ def lcmd(cmd=None, hl='hosts', un='root', v='0', e='0', f='l'):
     send(lf=local_cmd_file, rf=remote_cmd_file, hl=hl, un=un, m='0700', p='0')
     print
 
-    rc = RunCmds(hosts=hosts, commands=[remote_cmd_file + cmd_args], quiet=(False if v<>'0' else True),warn_only=(False if e<>'0' else True), mode='parallel', reset_results='yes')
+    #rc = RunCmds(hosts=hosts, commands=[remote_cmd_file + cmd_args], quiet=(False if v<>'0' else True),warn_only=(False if e<>'0' else True), mode='parallel', reset_results='yes')
+    rc = RunCmds(hosts=hosts, commands=[remote_cmd_file + cmd_args], quiet=(False if v<>'0' else True),warn_only=(False if e<>'0' else True), mode='serial', reset_results='yes')
     rc.go()
     rc.show_result(f)
 
