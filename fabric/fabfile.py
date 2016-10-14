@@ -67,6 +67,7 @@ class RunCmds():
                 self.__result_buffer = dict()
         except KeyError:
             pass
+        print "Tryb pracy: " + self.mode
 
     @serial
     def sexec(self):
@@ -123,17 +124,6 @@ class RunCmds():
                             self.__file_list[h] = el[h][key_]
 
         return self.__file_list
-
-
-@task
-def todo():
-    """
-    todo list
-        updt/upgr - dopisanie wersji dla redhat-based
-
-    :return:
-    """
-    print "spróbuj: fab -d todo"
 
 
 @task
@@ -242,11 +232,10 @@ def pcmd(c=None, cl='cmds', hl='hosts', un='root', v='0', e='0', f='l'):
 
 
 @task
-def lcmd(cmd=None, hl='hosts', un='root', v='0', e='0', f='l'):
+def lcmd(cmd=None, hl='hosts', un='root', v='0', e='0', f='l', m='s'):
     """
 
-    wykonywanie lokalnej komendy na zdalnych hostach w trybie "równoległym"
-    Uwaga. Żeby zabanglało muszą być wymienione klucze ssh.
+    wykonywanie lokalnej komendy na zdalnych hostach
 
     Opis:
     plik lokalny jest przesyłany na zdalne hosty do katalogu $HOME/.fabric z maską 700
@@ -260,6 +249,8 @@ def lcmd(cmd=None, hl='hosts', un='root', v='0', e='0', f='l'):
     :param e:  [0|inne] - kończy działanie przy błędzie zdalnej komendy (reszta hostów nie jest przetwarzana).
                           Domyślnie  0
     :param f:  [l|t] - format wyjścia (Lista/Tabela). Domyślnie l
+    :param m: [p|inne] tryb wykonywania komend (Parallel/Serial). Domyślnie <> p (serial).
+              Uwaga. W trybie paralell muszą być wymienione klucze ssh.
     :return:
     """
 
@@ -280,35 +271,19 @@ def lcmd(cmd=None, hl='hosts', un='root', v='0', e='0', f='l'):
     send(lf=local_cmd_file, rf=remote_cmd_file, hl=hl, un=un, m='0700', p='0')
     print
 
-    #rc = RunCmds(hosts=hosts, commands=[remote_cmd_file + cmd_args], quiet=(False if v<>'0' else True),warn_only=(False if e<>'0' else True), mode='parallel', reset_results='yes')
-    rc = RunCmds(hosts=hosts, commands=[remote_cmd_file + cmd_args], quiet=(False if v<>'0' else True),warn_only=(False if e<>'0' else True), mode='serial', reset_results='yes')
+    rc = RunCmds(
+        hosts=hosts,
+        commands=[remote_cmd_file + cmd_args],
+        quiet=(False if v<>'0' else True),
+        warn_only=(False if e<>'0' else True),
+        mode=('parallel' if m=='p' else 'serial'),
+        reset_results='yes'
+    )
     rc.go()
     rc.show_result(f)
 
     rc = RunCmds(hosts=hosts, commands=['rm -f ' + remote_cmd_file], quiet=True,warn_only=True, mode='parallel')
     rc.go()
-
-    quit()
-
-
-@task
-def updt():
-    """
-
-    sprawdzenie dostępności aktualizacji pakietów debiana
-    wykonuje wajig update 1>/dev/null && wajig toupgrade w trybie równoległym
-
-    :return:
-    """
-
-    env.user = 'root'
-    hstcmd = HostsCmds()
-    hosts = hstcmd.hosts(hxml='hosts')
-    cmds = ['wajig update 1>/dev/null && wajig toupgrade']
-
-    rc = RunCmds(hosts=hosts, commands=cmds, quiet=True,warn_only=True, mode='parallel')
-    rc.go()
-    rc.show_result('l')
 
     quit()
 

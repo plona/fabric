@@ -1,0 +1,92 @@
+#!/bin/bash - 
+#===============================================================================
+#
+#          FILE: update.sh
+# 
+#         USAGE: ./update.sh 
+# 
+#   DESCRIPTION: Sprawdza pakiety do zaktualizowania. Teoretycznie powinno
+#                działać niezależnie od dystrybucji. Będzie rozwijane.
+# 
+#       OPTIONS: ---
+#  REQUIREMENTS: ---
+#          BUGS: ---
+#         NOTES: ---
+#        AUTHOR: Marek Płonka (marekpl), marek.plonka@nask.pl
+#  ORGANIZATION: NASK
+#       CREATED: 14.10.2016 13:04:07
+#      REVISION:  ---
+#===============================================================================
+
+#-------------------------------------------------------------------------------
+# yum --security check-update
+# apt-get -s dist-upgrade |grep "^Inst" |grep -i securi
+# apt-get -s upgrade | grep ^Inst | grep -i securi
+# unattended-upgrade --dry-run -d 2> /dev/null | grep 'Checking' | awk '{ print $2 }'
+# /usr/bin/unattended-upgrade
+#-------------------------------------------------------------------------------
+set -o nounset                              # Treat unset variables as an error
+
+while [ $# -ge 1 ] ; do
+        echo $# $1
+        shift
+done
+
+exit
+
+#---  FUNCTION  ----------------------------------------------------------------
+#          NAME:  deb_update
+#   DESCRIPTION:  
+#    PARAMETERS:  
+#       RETURNS:  
+#-------------------------------------------------------------------------------
+deb_update ()
+{
+     apt-get update 1>/dev/null
+     [[ $? -ne 0 ]] && {
+        echo "Pobranie aktualizacji zakończone błędem!"
+        exit 1
+     }
+     if [ -x /usr/bin/wajig ]; then
+        cmd='/usr/bin/wajig toupgrade'
+     elif [ -x /usr/bin/apt ]; then
+        cmd='/usr/bin/apt list --upgradable'
+     else
+        cmd='apt-get -s upgrade'
+     fi
+     eval "$cmd"
+}    # ----------  end of function deb_update  ----------
+
+
+#---  FUNCTION  ----------------------------------------------------------------
+#          NAME:  rhel_update
+#   DESCRIPTION:  
+#    PARAMETERS:  
+#       RETURNS:  
+#-------------------------------------------------------------------------------
+rhel_update ()
+{
+    yum check-update 1>/dev/null
+    [[ $? -eq 0 ]] && {
+        echo "No upgradeable packages"
+        exit 0
+    } || {
+        yum check-update
+        exit $?
+    }
+        
+}    # ----------  end of function rhel_update  ----------
+
+distro=''
+if [ -f /etc/redhat-release ]; then
+    distro='sl'
+    rhel_update
+elif [ -f /etc/debian_version ]; then
+    distro='deb'
+    deb_update
+else
+    echo 'Nierozpoznana dystrybucja'
+    exit 1
+fi
+
+exit 0
