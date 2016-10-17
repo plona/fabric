@@ -1,7 +1,9 @@
 <?xml version="1.0"?>
 <data>
     <cmdList>
+        <!--
         <cmd>hostname -f</cmd>
+        -->
         <cmd>uname -a</cmd>
     </cmdList>
 </data>

@@ -68,12 +68,21 @@ class RunCmds():
         except KeyError:
             pass
         print "Tryb pracy: " + self.mode
+        # print "reset_results", self.reset_results
 
     @serial
     def sexec(self):
         if pingit(env.host_string):
             for cmd in self.commands:
                 self.__result_buffer[cmd] = run(cmd, shell=False, warn_only=self.warn_only, )
+                print env.host_string, self.__result_buffer
+                print "#########################"
+                self.__cmd_result.append(self.__result_buffer)
+                print "++++++++++++++++++++++++++"
+                print env.host_string, self.__cmd_result
+            print "======================"
+            print self.__cmd_result
+            print "----------------------"
             return self.__result_buffer
 
     #  @parallel(pool_size=10) # Run on as many as 10 hosts at once
@@ -83,6 +92,8 @@ class RunCmds():
         if pingit(env.host_string):
             for cmd in self.commands:
                 self.__result_buffer[cmd] = run(cmd, shell=False, warn_only=self.warn_only, )
+                print self.__result_buffer
+                print "#########################"
             return self.__result_buffer
 
     def go(self):
@@ -191,7 +202,7 @@ def scmd(c=None, cl='cmds', hl='hosts', un='root', v='0', e='0', f='l'):
 
     rc = RunCmds(hosts=hosts, commands=cmds, quiet=(False if v<>'0' else True),warn_only=(False if e<>'0' else True), mode='serial')
     rc.go()
-    rc.show_result(f)
+    # rc.show_result(f)
 
     quit()
 
