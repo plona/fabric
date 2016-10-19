@@ -51,7 +51,6 @@ class HostsCmds():
 
 
 class RunCmds():
-    __serial_buffer = list()
     __cmd_result = list()
     __result_buffer = dict()
     __file_list = dict()
@@ -69,25 +68,15 @@ class RunCmds():
         except KeyError:
             pass
         print "Tryb pracy: " + self.mode
-        # print "reset_results", self.reset_results
 
     @serial
     def sexec(self):
+        temp = dict()
         if pingit(env.host_string):
             for cmd in self.commands:
-                print env.host_string
-                print "1:", self.__serial_buffer
-
                 self.__result_buffer[cmd] = run(cmd, shell=False, warn_only=self.warn_only, )
-
-                print "2", self.__result_buffer
-
-                print "3:", self.__serial_buffer
-                self.__serial_buffer.append(env.host_string)
-                # self.__serial_buffer.append(self.__result_buffer)
-                print "4:", self.__serial_buffer
-
-            print "\nreturn:", self.__result_buffer
+                temp[env.host_string] = self.__result_buffer.copy()
+            self.__cmd_result.append(temp.copy())
             return self.__result_buffer
 
     #  @parallel(pool_size=10) # Run on as many as 10 hosts at once
@@ -97,30 +86,30 @@ class RunCmds():
         if pingit(env.host_string):
             for cmd in self.commands:
                 self.__result_buffer[cmd] = run(cmd, shell=False, warn_only=self.warn_only, )
-            print "return:", self.__result_buffer
             return self.__result_buffer
 
     def go(self):
         if self.quiet:
             with settings(hide('running', 'commands', 'stdout', 'stderr')):
                 if self.mode == "parallel":
-                    print 'executing parallel'
+                    # print 'executing parallel'
                     stdout = execute(self.pexec, hosts=self.hosts)
-                    self.__cmd_result.append(stdout)
-                    print stdout
+                    self.__cmd_result.append(stdout.copy())
+                    # return stdout
                 else:
-                    print 'executing serial'
+                    # print 'executing serial'
                     stdout = execute(self.sexec, hosts=self.hosts)
-                    print stdout
-                    # print self.__cmd_result
+                    # return stdout
                 # stdout = execute(self.pexec, hosts=self.hosts) if self.mode == 'parallel' else execute(self.sexec, hosts=self.hosts)
         else:
             stdout = execute(self.pexec, hosts=self.hosts) if self.mode == 'parallel' else execute(self.sexec, hosts=self.hosts)
 
-        # self.__cmd_result.append(stdout)
+        # self.__cmd_result.append(stdout.copy())
         return stdout
 
     def show_result(self, format_='l'):
+        print self.__cmd_result
+        return
         for h in self.hosts:
             if format_ == 'l':  # lista
                 print h + ':'
@@ -221,9 +210,8 @@ def scmd(c=None, cl='cmds', hl='hosts', un='root', v='0', e='0', f='l'):
                  warn_only=(False if e<>'0' else True,),
                  mode='serial',
                  reset_results="yes")
-    print
-    print rc.go()
-    # rc.show_result(f)
+    rc.go()
+    rc.show_result(f)
 
     quit()
 
