@@ -92,51 +92,55 @@ class RunCmds():
         if self.quiet:
             with settings(hide('running', 'commands', 'stdout', 'stderr')):
                 if self.mode == "parallel":
-                    # print 'executing parallel'
                     stdout = execute(self.pexec, hosts=self.hosts)
                     self.__cmd_result.append(stdout.copy())
-                    # return stdout
                 else:
-                    # print 'executing serial'
                     stdout = execute(self.sexec, hosts=self.hosts)
-                    # return stdout
-                # stdout = execute(self.pexec, hosts=self.hosts) if self.mode == 'parallel' else execute(self.sexec, hosts=self.hosts)
         else:
-            stdout = execute(self.pexec, hosts=self.hosts) if self.mode == 'parallel' else execute(self.sexec, hosts=self.hosts)
-
-        # self.__cmd_result.append(stdout.copy())
+            if self.mode == "parallel":
+                stdout = execute(self.pexec, hosts=self.hosts)
+                self.__cmd_result.append(stdout.copy())
+            else:
+                stdout = execute(self.sexec, hosts=self.hosts)
         return stdout
 
     def show_result(self, format_='l'):
-        print self.__cmd_result
-        return
         for h in self.hosts:
             if format_ == 'l':  # lista
                 print h + ':'
                 for el in self.__cmd_result:
-                    if el[h] is None:
-                        print 'is down'
-                    else:
-                       for key_ in el[h].keys():
-                           print key_ + ':', el[h][key_].return_code
-                           print el[h][key_]
+                    try:
+                        if el[h] is None:
+                            print 'is down'
+                        else:
+                           for key_ in el[h].keys():
+                               print key_ + ':', el[h][key_].return_code
+                               print el[h][key_]
+                    except KeyError:
+                        pass
                 print
             elif format_ == 't':  # tabela
                 print h + "\t",
                 for el in self.__cmd_result:
-                    if el[h] is None:
-                        print 'is down'
-                    else:
-                        for key_ in el[h].keys():
-                            print key_ + ':', el[h][key_].return_code, "\t",
+                    try:
+                        if el[h] is None:
+                            print 'is down'
+                        else:
+                            for key_ in el[h].keys():
+                                print key_ + ':', el[h][key_].return_code, "\t",
+                    except KeyError:
+                        pass
                 print
             elif format_ == 'e':  # edycja plików
                 for el in self.__cmd_result:
-                    if el[h] is None:
+                    try:
+                        if el[h] is None:
+                            pass
+                        else:
+                            for key_ in el[h].keys():
+                                self.__file_list[h] = el[h][key_]
+                    except KeyError:
                         pass
-                    else:
-                        for key_ in el[h].keys():
-                            self.__file_list[h] = el[h][key_]
 
         return self.__file_list
 
