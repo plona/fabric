@@ -8,7 +8,7 @@
 #   DESCRIPTION: Sprawdza pakiety do zaktualizowania. Teoretycznie powinno
 #                działać niezależnie od dystrybucji. Będzie rozwijane.
 # 
-#       OPTIONS: ---
+#       OPTIONS: [-t sec|all] [-m num|lst] domyślnie: sec num
 #  REQUIREMENTS: ---
 #          BUGS: ---
 #         NOTES: ---
@@ -25,15 +25,36 @@
 # unattended-upgrade --dry-run -d 2> /dev/null | grep 'Checking' | awk '{ print $2 }'
 # /usr/bin/unattended-upgrade
 #-------------------------------------------------------------------------------
+#===============================================================================
+#  GLOBAL DECLARATIONS
+#===============================================================================
 set -o nounset                              # Treat unset variables as an error
+dbg=false
+sec_all='sec'
+num_lst='num'
+distro=''
+version=''
 
-while [ $# -ge 1 ] ; do
-        echo $# $1
-        shift
-done
+#===============================================================================
+#  FUNCTION DEFINITIONS
+#===============================================================================
+#===  FUNCTION  ================================================================
+#         NAME:  usage
+#  DESCRIPTION:  Display usage information.
+#===============================================================================
+function usage ()
+{
+	cat <<- EOT
 
-exit
+  Usage :  ${0##/*/} [options] [--] 
 
+  Options: 
+  -h|help       Display this message
+  -t(ype)       [sec|all]
+  -m(ode)       [num|lst]
+
+	EOT
+}    # ----------  end of function usage  ----------
 #---  FUNCTION  ----------------------------------------------------------------
 #          NAME:  deb_update
 #   DESCRIPTION:  
@@ -42,20 +63,40 @@ exit
 #-------------------------------------------------------------------------------
 deb_update ()
 {
-     apt-get update 1>/dev/null
-     [[ $? -ne 0 ]] && {
-        echo "Pobranie aktualizacji zakończone błędem!"
-        exit 1
-     }
-     if [ -x /usr/bin/wajig ]; then
-        cmd='/usr/bin/wajig toupgrade'
-     elif [ -x /usr/bin/apt ]; then
-        cmd='/usr/bin/apt list --upgradable'
-     else
-        cmd='apt-get -s upgrade'
-     fi
-     eval "$cmd"
-}    # ----------  end of function deb_update  ----------
+    apt-get update 1>/dev/null
+    [[ $? -ne 0 ]] && {
+       echo "Pobranie aktualizacji zakończone błędem!"
+       exit 1
+    }
+
+    # tryb (co): security/all
+    if [ "$1" == "sec" ]; then
+#        echo "Security updates"
+        if [ -x /usr/bin/unattended-upgrade ]; then
+            cmd='unattended-upgrade --dry-run -d 2> /dev/null | grep '"'Checking'"' | awk '"'{ print "'$2'" }'"
+        else
+            cmd='apt-get -s upgrade | grep ^Inst | grep -i securi'
+        fi
+    else
+#        echo "Available updates"
+        if [ -x /usr/bin/wajig ]; then
+            cmd='/usr/bin/wajig toupgrade'
+         elif [ -x /usr/bin/apt ]; then
+            cmd='/usr/bin/apt list --upgradable'
+        else
+            cmd='apt-get -s upgrade'
+        fi
+    fi
+
+    # wyświetlanie wyniku (tylko liczba/lista)
+    if [ "$2" == "num" ]; then
+        cmd="$cmd"' | wc -l'
+    fi
+    
+    echo "Wykonuję: $cmd"
+    [[ "$1" == "sec" ]] && echo -n "Updates (security): " || echo -n "Updates (available): "
+    eval "$cmd"
+}    # ----------  end of function deb_update  ----------s
 
 
 #---  FUNCTION  ----------------------------------------------------------------
@@ -77,16 +118,75 @@ rhel_update ()
         
 }    # ----------  end of function rhel_update  ----------
 
-distro=''
-if [ -f /etc/redhat-release ]; then
-    distro='sl'
-    rhel_update
-elif [ -f /etc/debian_version ]; then
+#---  FUNCTION  ----------------------------------------------------------------
+#          NAME:  get_distro_version
+#   DESCRIPTION:  
+#    PARAMETERS:  
+#       RETURNS:  
+#-------------------------------------------------------------------------------
+get_distro_version ()
+{
+    local full_string="$1"
+    local rval=$2
+    local _rval string_array
+
+    oIFS=$IFS
+    IFS='=' string_array=($full_string)
+    IFS=$oIFS
+    i=$((${#string_array[@]} - 1))        # last element
+    _rval=${string_array[$i]}
+    _rval=${_rval:1:-1}
+
+    eval $rval='"$_rval"'
+}    # ----------  end of function get_distr_version  ----------
+#===============================================================================
+#  MAIN SCRIPT
+#===============================================================================
+#-----------------------------------------------------------------------
+#  Handle command line arguments
+#-----------------------------------------------------------------------
+
+while getopts ":t:m:" opt
+do
+  case $opt in
+    h|help     )  usage; exit 0   ;;
+    t|type     )  [[ "$OPTARG" == "all" ]] && sec_all=${OPTARG} ;;
+    m|mode     )  [[ "$OPTARG" == "lst" ]] && num_lst=${OPTARG} ;;
+    \? )  echo -e "\n  Option does not exist : $OPTARG\n"
+          usage; exit 1   ;;
+  esac    # --- end of case ---
+done
+shift $(($OPTIND-1))
+
+
+ # :TODO:19.10.2016 20:16:09:marekpl: rozpoznanie innych dystrybucji i wersji
+distro=$(cat /etc/*release | grep -w NAME)
+get_distro_version "$distro" distro
+
+version=$(cat /etc/*release | grep -w VERSION_ID)
+get_distro_version "$version" version
+
+if $dbg; then
+    echo "distro $distro"
+    echo "version $version"
+    echo "sec_all $sec_all"
+    echo "num_lst $num_lst"
+fi
+
+if echo "$distro" | grep -iq debian; then
     distro='deb'
-    deb_update
+    deb_update $sec_all $num_lst
+elif echo "$distro" | grep -iq ubuntu; then
+    distro='ubu'
+elif echo "$distro" | grep -iq Scientific; then
+    distro='sl'
 else
     echo 'Nierozpoznana dystrybucja'
     exit 1
+fi
+
+if $dbg; then
+    echo "effective distro: $distro"
 fi
 
 exit 0

@@ -281,7 +281,7 @@ def lcmd(cmd=None, hl='hosts', un='root', v='0', e='0', f='l', m='s'):
     env.user = un
     hstcmd = HostsCmds()
     hosts = hstcmd.hosts(hxml=hl)
-    rc = RunCmds(hosts=hosts, commands=['mkdir .fabric'], quiet=True,warn_only=True, mode='parallel')
+    rc = RunCmds(hosts=hosts, commands=['mkdir .fabric || true'], quiet=True,warn_only=True, mode='parallel')
     rc.go()
 
     if (cmd is None):
