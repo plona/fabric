@@ -20,6 +20,9 @@
 
 #-------------------------------------------------------------------------------
 # yum --security check-update
+# yum updateinfo list available
+# yum updateinfo list security 
+# yum install yum-plugin-security (6x)
 # apt-get -s dist-upgrade |grep "^Inst" |grep -i securi
 # apt-get -s upgrade | grep ^Inst | grep -i securi
 # unattended-upgrade --dry-run -d 2> /dev/null | grep 'Checking' | awk '{ print $2 }'
@@ -98,12 +101,12 @@ deb_update ()
 
 
 #---  FUNCTION  ----------------------------------------------------------------
-#          NAME:  rhel_update
+#          NAME:  sl_update
 #   DESCRIPTION:  
 #    PARAMETERS:  
 #       RETURNS:  
 #-------------------------------------------------------------------------------
-rhel_update ()
+sl_update ()
 {
     yum check-update 1>/dev/null
     [[ $? -eq 0 ]] && {
@@ -178,6 +181,7 @@ elif echo "$distro" | grep -iq ubuntu; then
     distro='ubu'
 elif echo "$distro" | grep -iq Scientific; then
     distro='sl'
+    sl_update $sec_all $num_lst
 else
     echo 'Nierozpoznana dystrybucja'
     exit 1
