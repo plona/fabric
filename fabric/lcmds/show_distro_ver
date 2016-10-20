@@ -1,0 +1,108 @@
+#!/bin/bash - 
+#===============================================================================
+#
+#          FILE: show_distro_ver
+# 
+#         USAGE: ./show_distro_ver 
+# 
+#   DESCRIPTION: 
+# 
+#       OPTIONS: ---
+#  REQUIREMENTS: ---
+#          BUGS: ---
+#         NOTES: ---
+#        AUTHOR: Marek Płonka (marekpl), marek.plonka@nask.pl
+#  ORGANIZATION: NASK
+#       CREATED: 20.10.2016 16:49:20
+#      REVISION:  ---
+#===============================================================================
+
+#===============================================================================
+#  GLOBAL DECLARATIONS
+#===============================================================================
+set -o nounset                              # Treat unset variables as an error
+short_long='long'
+#===============================================================================
+#  FUNCTION DEFINITIONS
+#===============================================================================
+#---  FUNCTION  ----------------------------------------------------------------
+#          NAME:  usage
+#   DESCRIPTION:  
+#    PARAMETERS:  
+#       RETURNS:  
+#-------------------------------------------------------------------------------
+function usage ()
+{
+	cat <<- EOT
+
+  Usage :  ${0##/*/} [options] [--] 
+
+  Options: 
+  -h|help       Display this message
+  -s|short      short output
+
+	EOT
+}    # ----------  end of function usage  ----------
+#---  FUNCTION  ----------------------------------------------------------------
+#          NAME:  get_distro_version
+#   DESCRIPTION:  
+#    PARAMETERS:  
+#       RETURNS:  
+#-------------------------------------------------------------------------------
+get_distro_version ()
+{
+    local full_string="$1"
+    local rval=$2
+    local _rval string_array
+
+    oIFS=$IFS
+    IFS='=' string_array=($full_string)
+    IFS=$oIFS
+    i=$((${#string_array[@]} - 1))        # last element
+    _rval=${string_array[$i]}
+    _rval=${_rval:1:-1}
+
+    eval $rval='"$_rval"'
+}    # ----------  end of function get_distr_version  ----------
+#===============================================================================
+#  MAIN SCRIPT
+#===============================================================================
+#-----------------------------------------------------------------------
+#  Handle command line arguments
+#-----------------------------------------------------------------------
+
+while getopts ":hs" opt
+do
+  case $opt in
+    h|help     )  usage; exit 0   ;;
+    s|short    )  short_long='short' ;;
+    \? )  echo -e "\n  Option does not exist : $OPTARG\n"
+          usage; exit 1   ;;
+  esac
+done
+shift $(($OPTIND-1))
+
+tmp=$(cat /etc/*release | grep -w NAME)
+get_distro_version "$tmp" tmp
+[[ "$short_long" == "short" ]] && echo -n "$tmp " || echo "name: $tmp"
+
+tmp=$(cat /etc/*release | grep -w VERSION_ID)
+get_distro_version "$tmp" tmp
+[[ "$short_long" == "short" ]] && {
+    echo "$tmp"
+    exit 0
+} || {
+    echo "version_id: $tmp"
+}
+
+tmp=$(cat /etc/*release | grep -w VERSION)
+get_distro_version "$tmp" tmp
+echo "version: $tmp"
+
+tmp=$(cat /etc/*release | grep -w PRETTY_NAME)
+get_distro_version "$tmp" tmp
+echo "pretty_name: $tmp"
+
+#-------------------------------------------------------------------------------
+exit 0
+#-------------------------------------------------------------------------------

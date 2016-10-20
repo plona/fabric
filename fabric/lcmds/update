@@ -71,14 +71,12 @@ deb_update ()
 
     # tryb (co): security/all
     if [ "$1" == "sec" ]; then
-#        echo "Security updates"
         if [ -x /usr/bin/unattended-upgrade ]; then
             cmd='unattended-upgrade --dry-run -d 2> /dev/null | grep '"'Checking'"' | awk '"'{ print "'$2'" }'"
         else
             cmd='apt-get -s upgrade | grep ^Inst | grep -i securi'
         fi
     else
-#        echo "Available updates"
         if [ -x /usr/bin/wajig ]; then
             cmd='/usr/bin/wajig toupgrade'
          elif [ -x /usr/bin/apt ]; then
@@ -154,7 +152,7 @@ do
     m|mode     )  [[ "$OPTARG" == "lst" ]] && num_lst=${OPTARG} ;;
     \? )  echo -e "\n  Option does not exist : $OPTARG\n"
           usage; exit 1   ;;
-  esac    # --- end of case ---
+  esac
 done
 shift $(($OPTIND-1))
 
