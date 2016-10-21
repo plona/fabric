@@ -32,6 +32,7 @@
 #  GLOBAL DECLARATIONS
 #===============================================================================
 set -o nounset                              # Treat unset variables as an error
+set -e
 dbg=false
 sec_all='sec'
 num_lst='num'
@@ -41,10 +42,10 @@ version=''
 #===============================================================================
 #  FUNCTION DEFINITIONS
 #===============================================================================
-#===  FUNCTION  ================================================================
+#---  FUNCTION  ----------------------------------------------------------------
 #         NAME:  usage
 #  DESCRIPTION:  Display usage information.
-#===============================================================================
+#-------------------------------------------------------------------------------
 function usage ()
 {
 	cat <<- EOT
@@ -53,8 +54,8 @@ function usage ()
 
   Options: 
   -h|help       Display this message
-  -t(ype)       [sec|all]
-  -m(ode)       [num|lst]
+  -t(ype)       [sec|all] domyślnie sec(urity)
+  -m(ode)       [num|lst] domyślnie num(bers of pkg)
 
 	EOT
 }    # ----------  end of function usage  ----------
@@ -102,21 +103,33 @@ deb_update ()
 
 #---  FUNCTION  ----------------------------------------------------------------
 #          NAME:  sl_update
-#   DESCRIPTION:  
+#   DESCRIPTION:  dla wersji 6.x musi być zainstalowana wtyczka yum-plugin-security
 #    PARAMETERS:  
 #       RETURNS:  
 #-------------------------------------------------------------------------------
 sl_update ()
 {
-    yum check-update 1>/dev/null
-    [[ $? -eq 0 ]] && {
-        echo "No upgradeable packages"
-        exit 0
-    } || {
-        yum check-update
-        exit $?
-    }
-        
+    # lista repozytoriów. Do wyfiltrowania wyjścia yum updateinfo list available/security
+    local repolist
+    repolist=/tmp/repolist.$$
+    yum repolist | awk '{print $1}' | head --lines=-1 | tail --lines=+2 > $repolist
+    yum clean all
+
+    # tryb (co): security/all
+    if [ "$1" == "sec" ]; then
+        if [ "$2" == "num" ]; then
+            cmd='yum updateinfo summary cves'
+        fi
+        cmd='yum updateinfo list cves'
+    else
+        if [ "$2" == "num" ]; then
+            cmd='yum updateinfo summary available'
+        fi
+        cmd='yum updateinfo list available'
+    fi
+
+    echo "Wykonuję: $cmd"
+#    eval "$cmd"
 }    # ----------  end of function rhel_update  ----------
 
 #---  FUNCTION  ----------------------------------------------------------------
@@ -147,7 +160,7 @@ get_distro_version ()
 #  Handle command line arguments
 #-----------------------------------------------------------------------
 
-while getopts ":t:m:" opt
+while getopts ":t:m:h" opt
 do
   case $opt in
     h|help     )  usage; exit 0   ;;
