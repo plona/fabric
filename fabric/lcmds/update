@@ -110,22 +110,17 @@ deb_update ()
 sl_update ()
 {
     # lista repozytoriów. Do wyfiltrowania wyjścia yum updateinfo list available/security
-    local repolist
-    repolist=/tmp/repolist.$$
-    yum repolist | awk '{print $1}' | head --lines=-1 | tail --lines=+2 > $repolist
-    yum clean all
+#    local repolist
+#    repolist=/tmp/repolist.$$
+#    yum repolist | awk '{print $1}' | head --lines=-1 | tail --lines=+2 > $repolist
+    yum clean all #>/dev/null 2>&1
 
+    echo $1 $2
     # tryb (co): security/all
     if [ "$1" == "sec" ]; then
-        if [ "$2" == "num" ]; then
-            cmd='yum updateinfo summary cves'
-        fi
-        cmd='yum updateinfo list cves'
+        [[ "$2" == "num" ]] && cmd='yum updateinfo summary cves' || cmd='yum updateinfo list cves'
     else
-        if [ "$2" == "num" ]; then
-            cmd='yum updateinfo summary available'
-        fi
-        cmd='yum updateinfo list available'
+        [[ "$2" == "num" ]] && cmd='yum updateinfo summary available' || cmd='yum updateinfo list available'
     fi
 
     echo "Wykonuję: $cmd"
