@@ -67,7 +67,8 @@ function usage ()
 #-------------------------------------------------------------------------------
 deb_update ()
 {
-    apt-get update 1>/dev/null
+    ### apt-get update 1>/dev/null
+    apt-get update >/dev/null 2>&1
     [[ $? -ne 0 ]] && {
        echo "Pobranie aktualizacji zakończone błędem!"
        exit 1
@@ -78,8 +79,7 @@ deb_update ()
         if [ -x /usr/bin/unattended-upgrade ]; then
             cmd='unattended-upgrade --dry-run -d 2> /dev/null | grep '"'Checking'"' | awk '"'{ print "'$2'" }'"
         else
-            echo "Niezainstalowany pakiet UNATTENDED-UPGRADES. Zainstaluj, aby uruchomić w trybie SEC."
-            exit 1
+            cmd='apt-get -s upgrade | grep ^Inst | grep -i securi'
         fi
     else
         if [ -x /usr/bin/wajig ]; then
@@ -114,15 +114,16 @@ sl_update ()
 #    local repolist
 #    repolist=/tmp/repolist.$$
 #    yum repolist | awk '{print $1}' | head --lines=-1 | tail --lines=+2 > $repolist
-    yum clean all #>/dev/null 2>&1
+    yum clean all >/dev/null 2>&1
 
-    echo $1 $2
     # tryb (co): security/all
+    cmd='yum --quiet '
     if [ "$1" == "sec" ]; then
-        [[ "$2" == "num" ]] && cmd='yum updateinfo summary cves' || cmd='yum updateinfo list cves'
+        [[ "$2" == "num" ]] && cmd="$cmd  updateinfo summary cves" || cmd="$cmd updateinfo list cves"
     else
-        [[ "$2" == "num" ]] && cmd='yum updateinfo summary available' || cmd='yum updateinfo list available'
+        [[ "$2" == "num" ]] && cmd="$cmd updateinfo summary available" || cmd="$cmd updateinfo list available"
     fi
+    cmd="$cmd"' 2>/dev/null'
 
     echo "Wykonuję: $cmd"
     eval "$cmd"
@@ -137,7 +138,7 @@ sl_update ()
 #-------------------------------------------------------------------------------
 ubu_update ()
 {
-    apt-get update 1>/dev/null
+    apt-get update >/dev/null 2>&1
     [[ $? -ne 0 ]] && {
        echo "Pobranie aktualizacji zakończone błędem!"
        exit 1
@@ -148,7 +149,8 @@ ubu_update ()
         if [ -x /usr/bin/unattended-upgrade ]; then
             cmd='unattended-upgrade --dry-run -d 2> /dev/null | grep '"'Checking'"' | awk '"'{ print "'$2'" }'"
         else
-            cmd='apt-get -s upgrade | grep ^Inst | grep -i securi'
+            echo "Niezainstalowany pakiet UNATTENDED-UPGRADES. Zainstaluj, aby uruchomić w trybie SEC."
+            exit 1
         fi
     else
         if [ -x /usr/bin/wajig ]; then
@@ -230,9 +232,9 @@ if echo "$distro" | grep -iq debian; then
     deb_update $sec_all $num_lst
 elif echo "$distro" | grep -iq ubuntu; then
     distro='ubu'
+    ubu_update $sec_all $num_lst
 elif echo "$distro" | grep -iq Scientific; then
     distro='sl'
-    ubu_update $sec_all $num_lst
     sl_update $sec_all $num_lst
 else
     echo 'Nierozpoznana dystrybucja'
