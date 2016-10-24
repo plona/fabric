@@ -78,7 +78,8 @@ deb_update ()
         if [ -x /usr/bin/unattended-upgrade ]; then
             cmd='unattended-upgrade --dry-run -d 2> /dev/null | grep '"'Checking'"' | awk '"'{ print "'$2'" }'"
         else
-            cmd='apt-get -s upgrade | grep ^Inst | grep -i securi'
+            echo "Niezainstalowany pakiet UNATTENDED-UPGRADES. Zainstaluj, aby uruchomić w trybie SEC."
+            exit 1
         fi
     else
         if [ -x /usr/bin/wajig ]; then
@@ -124,9 +125,51 @@ sl_update ()
     fi
 
     echo "Wykonuję: $cmd"
-#    eval "$cmd"
+    eval "$cmd"
 }    # ----------  end of function rhel_update  ----------
 
+
+#---  FUNCTION  ----------------------------------------------------------------
+#          NAME:  ubu_update
+#   DESCRIPTION:  
+#    PARAMETERS:  
+#       RETURNS:  
+#-------------------------------------------------------------------------------
+ubu_update ()
+{
+    apt-get update 1>/dev/null
+    [[ $? -ne 0 ]] && {
+       echo "Pobranie aktualizacji zakończone błędem!"
+       exit 1
+    }
+
+    # tryb (co): security/all
+    if [ "$1" == "sec" ]; then
+        if [ -x /usr/bin/unattended-upgrade ]; then
+            cmd='unattended-upgrade --dry-run -d 2> /dev/null | grep '"'Checking'"' | awk '"'{ print "'$2'" }'"
+        else
+            cmd='apt-get -s upgrade | grep ^Inst | grep -i securi'
+        fi
+    else
+        if [ -x /usr/bin/wajig ]; then
+            cmd='/usr/bin/wajig toupgrade'
+         elif [ -x /usr/bin/apt ]; then
+            cmd='/usr/bin/apt list --upgradable'
+        else
+            cmd='apt-get -s upgrade'
+        fi
+    fi
+
+    # wyświetlanie wyniku (tylko liczba/lista)
+    if [ "$2" == "num" ]; then
+        cmd="$cmd"' | wc -l'
+    fi
+    
+    echo "Wykonuję: $cmd"
+    [[ "$1" == "sec" ]] && echo -n "Updates (security): " || echo -n "Updates (available): "
+    eval "$cmd"
+        
+}    # ----------  end of function ubu_update  ----------
 #---  FUNCTION  ----------------------------------------------------------------
 #          NAME:  get_distro_version
 #   DESCRIPTION:  
@@ -189,6 +232,7 @@ elif echo "$distro" | grep -iq ubuntu; then
     distro='ubu'
 elif echo "$distro" | grep -iq Scientific; then
     distro='sl'
+    ubu_update $sec_all $num_lst
     sl_update $sec_all $num_lst
 else
     echo 'Nierozpoznana dystrybucja'
