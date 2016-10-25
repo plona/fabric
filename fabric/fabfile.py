@@ -566,9 +566,10 @@ def down(o='-r', hl="hosts", un="root"):
 
     :param hl: plik z listą hostów, domyślnie: hosts.xml (bez rozszerzenia) w bieżącym katalogu.
     :param un: użytkownik, domyślnie: root
-    :param o: opcje (jak w shutdown)
+    :param o: opcje (jak w shutdown), domyślnie -r
     :return:
     """
+
     env.user = un
     hstcmd = HostsCmds()
     hosts = hstcmd.hosts(hxml=hl)
