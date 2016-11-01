@@ -1,0 +1,110 @@
+#!/bin/bash - 
+#===============================================================================
+#
+#          FILE: sl64_std
+# 
+#         USAGE: ./sl64_std 
+# 
+#   DESCRIPTION: usunięcie zbędnych pakietów i instalacja podstawowych SL 6.4
+#                MUSI być wykonane:
+#                yum check-update && yum update
+#                reboot
+# 
+#       OPTIONS: ---
+#  REQUIREMENTS: ---
+#          BUGS: ---
+#         NOTES: ---
+#        AUTHOR: Marek Płonka (marekpl), marek.plonka@nask.pl
+#  ORGANIZATION: NASK
+#       CREATED: 01.11.2016 00:22:57
+#      REVISION:  ---
+#===============================================================================
+
+#===============================================================================
+#  GLOBAL DECLARATIONS
+#===============================================================================
+set -o nounset                              # Treat unset variables as an error
+alias yum='yum -y'
+host_name='localhost.localdomain'
+#set -o errexit
+
+#===============================================================================
+#  FUNCTION DEFINITIONS
+#===============================================================================
+
+#---  FUNCTION  ----------------------------------------------------------------
+#         NAME:  usage
+#  DESCRIPTION:  Display usage information.
+#-------------------------------------------------------------------------------
+function usage ()
+{
+	cat <<- EOT
+
+  Usage :  ${0##/*/} [options] [--] 
+
+  Options: 
+  -h|help       Display this message
+  -n(ame)       hostname
+
+	EOT
+}    # ----------  end of function usage  ----------
+#---  FUNCTION  ----------------------------------------------------------------
+#          NAME:  mycd
+#   DESCRIPTION:  
+#    PARAMETERS:  
+#       RETURNS:  
+#-------------------------------------------------------------------------------
+mycd ()
+{
+    cd "$1" || { echo "Błąd cd $1"; exit 1; }        
+}    # ----------  end of function mycd  ----------
+
+#===============================================================================
+#  MAIN SCRIPT
+#===============================================================================
+#-----------------------------------------------------------------------
+#  Handle command line arguments
+#-----------------------------------------------------------------------
+
+while getopts ":n:h" opt
+do
+  case $opt in
+    h|help )  usage; exit 0   ;;
+    n      )  host_name="${OPTARG}" ;;
+    \? )  echo -e "\n  Option does not exist : $OPTARG\n"
+          usage; exit 1   ;;
+  esac
+done
+shift $(($OPTIND-1))
+#-------------------------------------------------------------------------------
+# 
+#-------------------------------------------------------------------------------
+mycd /root
+mkdir bin tmp archive
+echo $host_name
+
+# hostname
+mycd /etc/sysconfig
+echo "NETWORKING=yes" > network
+echo "HOSTNAME=$host_name" >> network
+
+# selinux
+mycd /etc/selinux
+cp -p config config.$$.orig
+echo "SELINUX=disabled" > config
+echo "SELINUXTYPE=targeted" >> config
+
+yum install epel-release sl-release
+#yum clean all
+#yum makecache
+
+yum install \
+    bash-completion \
+    htop \
+    mc \
+    vim-enhanced \
+    yum-utils \
+    tmux \
+    wget
+
+#yum -y install yum-utils
