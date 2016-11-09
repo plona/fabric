@@ -7,7 +7,7 @@
 # 
 #   DESCRIPTION: usunięcie zbędnych pakietów i instalacja podstawowych SL 6.4
 #                MUSI być wykonane:
-#                yum check-update && yum update
+#                yum -y check-update && yum -y update
 #                reboot
 # 
 #       OPTIONS: ---
@@ -24,9 +24,7 @@
 #  GLOBAL DECLARATIONS
 #===============================================================================
 set -o nounset                              # Treat unset variables as an error
-alias yum='yum -y'
 host_name='localhost.localdomain'
-#set -o errexit
 
 #===============================================================================
 #  FUNCTION DEFINITIONS
@@ -85,26 +83,43 @@ echo $host_name
 
 # hostname
 mycd /etc/sysconfig
+cp -p network "network.$(date --rfc-3339=ns).orig"
 echo "NETWORKING=yes" > network
 echo "HOSTNAME=$host_name" >> network
 
 # selinux
 mycd /etc/selinux
-cp -p config config.$$.orig
+cp -p config "config.$(date --rfc-3339=ns).orig"
 echo "SELINUX=disabled" > config
 echo "SELINUXTYPE=targeted" >> config
 
-yum install epel-release sl-release
-#yum clean all
-#yum makecache
+yum -y install epel-release sl-release
+#yum -y clean all
+#yum -y makecache
 
-yum install \
+yum -y install \
     bash-completion \
+    bind-utils \
     htop \
+    mailx \
     mc \
-    vim-enhanced \
-    yum-utils \
+    mlocate \
+    net-tools \
+    nmap-ncat \
+    ntp \
+    ntpdate \
+    openssh-clients \
+    sysstat \
+    tcpdump \
+    telnet \
     tmux \
-    wget
+    unzip \
+    vim-enhanced \
+    wget \
+    yum-utils
 
-#yum -y install yum-utils
+yum -y remove *firmware
+yum -y remove NetworkManager NetworkManager-*
+yum -y remove yum-cron yum-autoupdate dnsmasq firewalld
+yum -y remove kernel-tools*
+yum -y remove ppp wpa_supplicant
