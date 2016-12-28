@@ -1,5 +1,3 @@
 .idea/*
 *.pyc
-hosts.xml
-zih.xml
-arche-wew.xml
+*.xml
