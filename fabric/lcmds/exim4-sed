@@ -1,0 +1,3 @@
+#!/bin/bash
+sed -i 's/^dc_readhost.*/dc_readhost='\'"$HOSTNAME"\''/' /etc/exim4/update-exim4.conf.conf
+
