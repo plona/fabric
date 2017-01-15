@@ -1,0 +1,72 @@
+#!/bin/bash - 
+#===============================================================================
+#
+#          FILE: deb-upgrade
+# 
+#         USAGE: ./deb-upgrade 
+# 
+#   DESCRIPTION: 
+# 
+#       OPTIONS: ---
+#  REQUIREMENTS: ---
+#          BUGS: ---
+#         NOTES: ---
+#        AUTHOR: Marek Płonka (marekpl), marek.plonka@nask.pl
+#  ORGANIZATION: NASK
+#       CREATED: 15.01.2017 11:48:48
+#      REVISION:  ---
+#===============================================================================
+
+set -o nounset                              # Treat unset variables as an error
+
+#===============================================================================
+#  GLOBAL DECLARATIONS
+#===============================================================================
+
+#===============================================================================
+#  FUNCTION DEFINITIONS
+#===============================================================================
+#---  FUNCTION  ----------------------------------------------------------------
+#         NAME:  usage
+#  DESCRIPTION:  Display usage information.
+#-------------------------------------------------------------------------------
+function usage ()
+{
+	cat <<- EOT
+
+  Usage :  ${0##/*/} [options] [--] 
+
+  Options: 
+  -h|help            Display this message
+  -n(o-interactive)  domyślnie interactive
+
+	EOT
+}    # ----------  end of function usage  ----------
+#===============================================================================
+#  MAIN SCRIPT
+#===============================================================================
+#-----------------------------------------------------------------------
+#  Handle command line arguments
+#-----------------------------------------------------------------------
+interactive=true
+while getopts ":n:h" opt
+do
+  case $opt in
+    h  )  usage; exit 0 ;;
+    n  )  interactive=false ;;
+    \? )  echo -e "\n  Option does not exist : $OPTARG\n"; usage; exit 1 ;;
+  esac
+done
+shift $(($OPTIND-1))
+#-----------------------------------------------------------------------
+#apt-get update -q || { echo "Błąd pobierania";  exit 1; }
+
+echo "interactive = $interactive"
+[[ $interactive == true ]] && {
+    apt-get upgrade
+} || {
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get upgrade -q -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"
+}
+
+exit 0
