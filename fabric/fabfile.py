@@ -313,26 +313,33 @@ def lcmd(cmd=None, hl='hosts', un='root', v='0', e='0', f='l', m='s'):
 
 
 @task
-def upgr(c='y'):
+def upgr(c='1'):
     """
 
     upgrade pakietów debiana
 
-    :param c: [n|inne]
-           c=n apt-get -y upgrade w trybie równoległym
-           c<>n apt-get upgrade w trybie szeregowym
+    :param c: [0|1|2]
+           c=0 apt-get -y upgrade w trybie równoległym
+           c=1 apt-get -y upgrade w trybie szeregowym (domyślne)
+           c=2 apt-get    upgrade w trybie szeregowym
     :return:
     """
 
     env.user = 'root'
     hstcmd = HostsCmds()
     hosts = hstcmd.hosts(hxml='hosts')
-    if c == 'n':
-        cmds = ['apt-get -y upgrade']
+    if c == '0':
+        cmds = ['(export DEBIAN_FRONTEND=noninteractive; apt-get upgrade -q -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold")']
         mode ='parallel'
-    else:
+    elif c == '1':
+        cmds = ['(export DEBIAN_FRONTEND=noninteractive; apt-get upgrade -q -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold")']
+        mode ='serial'
+    elif c == '2':
         cmds = ['apt-get upgrade']
         mode ='serial'
+    else:
+        print "Błąd parametru"
+        quit()
 
     rc = RunCmds(hosts=hosts, commands=cmds, quiet=False,warn_only=True, mode=mode)
     rc.go()
@@ -402,7 +409,7 @@ def edit(fn=None, hl="hosts", un='root', ed='t', m='a'):
     :param un: użytkownik, domyślnie: root
     :param ed:[t|p|<command>] komenda edycji plików. Domyślnie: t.
                t - 'screen vim -p'
-               p - 'gvim --nofork -p'
+               g - 'gvim --nofork -p'
                command - użytkownika
     :param m:[a|h|n] Domyślnie: a.
            m=a wszystkie pliki jednocześnie
