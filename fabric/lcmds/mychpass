@@ -1,0 +1,14 @@
+#!/bin/bash
+set -u
+mypass='mypass'
+myhost=$(hostname)
+oIFS="$IFS"
+IFS='.' a=($myhost)
+IFS="$oIFS"
+myhost="${a[0]}"
+myhost="${myhost^^}"
+echo $myhost
+
+cmd="echo root:'$mypass$myhost' | chpasswd"
+#echo $cmd
+eval "$cmd"
