@@ -65,7 +65,7 @@ for u in $@; do
         eval "$cmd" || exit 1
     }
     [[ -n "$myhome" ]] && {
-        cmd="rm -fv \"$myhome/.ssh/autorized_keys\""
+        cmd="rm -fv \"$myhome/.ssh/authorized_keys\""
         echo $cmd
         eval "$cmd" || exit 1
     }
