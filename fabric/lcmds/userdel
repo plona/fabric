@@ -1,0 +1,74 @@
+#!/bin/bash - 
+#===============================================================================
+#
+#          FILE: userdel
+# 
+#         USAGE: ./userdel 
+# 
+#   DESCRIPTION: usuwa usera i klucze ssh ($HOME/.ssh/authorized_keys
+# 
+#       OPTIONS: ---
+#  REQUIREMENTS: ---
+#          BUGS: ---
+#         NOTES: ---
+#        AUTHOR: Marek Płonka (marekpl), marek.plonka@nask.pl
+#  ORGANIZATION: NASK
+#       CREATED: 24.02.2017 12:39:46
+#      REVISION:  ---
+#===============================================================================
+
+set -o nounset                              # Treat unset variables as an error
+
+#===============================================================================
+#  GLOBAL DECLARATIONS
+#===============================================================================
+myuser=""
+myhome=""
+#===============================================================================
+#  FUNCTION DEFINITIONS
+#===============================================================================
+
+#---  FUNCTION  ----------------------------------------------------------------
+#          NAME:  get_user_home
+#   DESCRIPTION:  
+#    PARAMETERS:  
+#       RETURNS:  
+#-------------------------------------------------------------------------------
+get_user_home ()
+{
+    local cmd oIFS
+    local -a a
+    set +u
+    cmd="cat /etc/passwd | awk -F : '{print "'$1"|"$6'"}' | grep -w ^$1"
+    oIFS=$IFS
+    IFS='|' a=($(eval "$cmd"))
+    IFS=$oIFS
+    myuser=${a[0]}
+    myhome=${a[1]}
+    set -u
+        
+}    # ----------  end of function get_user_home  ----------
+#===============================================================================
+#  MAIN SCRIPT
+#===============================================================================
+[[ $# -lt 1 ]] && {
+    echo "no args"
+    exit 2
+}
+
+
+for u in $@; do
+    get_user_home "$u"
+    [[ -n "$myuser" ]] && {
+        cmd="userdel $myuser"
+        echo $cmd
+        eval "$cmd" || exit 1
+    }
+    [[ -n "$myhome" ]] && {
+        cmd="rm -fv \"$myhome/.ssh/autorized_keys\""
+        echo $cmd
+        eval "$cmd" || exit 1
+    }
+done
+
+exit 0
