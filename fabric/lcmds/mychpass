@@ -10,5 +10,5 @@ myhost="${myhost^^}"
 echo $myhost
 
 cmd="echo root:'$mypass$myhost' | chpasswd"
-#echo $cmd
+echo $cmd
 eval "$cmd"

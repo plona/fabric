@@ -1,0 +1,46 @@
+#!/bin/bash - 
+#===============================================================================
+#
+#          FILE: new-packages
+# 
+#         USAGE: ./new-packages 
+# 
+#   DESCRIPTION: Używane po nowej instalacji debiana.
+#                Generuje skrypt instalacyjny brakujących pakietów na podstawie wzorca.
+#                Użycie:
+#                Nowa instalacja: wajig list-installed | grep -v ^lib | sort > <plik1>
+#                Wzorcowa instalacja: wajig list-installed | grep -v ^lib | sort > <plik2>
+#                ./new-packages plik1 plik2
+#                Plik wynikowy przejrzeć, ew. usunąć co niepotrzebne i odpalić na nowej instalacji
+# 
+#       OPTIONS: ---
+#  REQUIREMENTS: ---
+#          BUGS: ---
+#         NOTES: ---
+#        AUTHOR: Marek Płonka (marekpl), marek.plonka@nask.pl
+#  ORGANIZATION: NASK
+#       CREATED: 07.04.2017 18:31:58
+#      REVISION:  ---
+#===============================================================================
+
+set -o nounset                              # Treat unset variables as an error
+
+p1="$1"
+p2="$2"
+out="$0.$$"
+
+i=$(comm -13 "$p1" "$p2" | wc -l)
+k=1
+
+echo 'wajig install \' > "$out"
+comm -13 "$p1" "$p2" | \
+while read pkg; do
+    pkg=$(echo -n "$pkg" | tr -d '\n\r')
+    echo -ne "\t$pkg " >> "$out"
+    [[ $k -lt $i ]] && echo '\' >> "$out"
+    ((k+=1))
+done
+echo -e "\n" >> "$out"
+chmod a+x "$out"
+
+exit 0
