@@ -1,6 +1,6 @@
 #!/bin/bash
 set -u
-mypass='mypass'
+mypass='!@'
 myhost=$(hostname)
 oIFS="$IFS"
 IFS='.' a=($myhost)
