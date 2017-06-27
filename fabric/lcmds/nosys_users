@@ -2,5 +2,5 @@
 
 cat /etc/passwd | \
     sort -t : -k 3 -g | \
-    awk -v uid=$1 -F : '{ if ($3 >= uid) print $0 }'
+    awk -v uid=$1 -F : '{ if ($3 >= uid && $1 != "nobody") print $0 }'
 
