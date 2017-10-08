@@ -1,0 +1,125 @@
+#!/bin/bash - 
+#===============================================================================
+#
+#          FILE: add-sudo-user
+# 
+#         USAGE: ./add-sudo-user 
+# 
+#   DESCRIPTION:
+# 
+#       OPTIONS: ---
+#  REQUIREMENTS: ---
+#          BUGS: ---
+#         NOTES: ---
+#        AUTHOR: Marek Płonka (marekpl), marek.plonka@nask.pl
+#  ORGANIZATION: NASK
+#       CREATED: 08.10.2017 15:37:53
+#      REVISION:  ---
+#===============================================================================
+
+#===============================================================================
+#  GLOBAL DECLARATIONS
+#===============================================================================
+set -o nounset                              # Treat unset variables as an error
+user_comment=""
+user_name=""
+#===============================================================================
+#  FUNCTION DEFINITIONS
+#===============================================================================
+#---  FUNCTION  ----------------------------------------------------------------
+#          NAME:  usage
+#   DESCRIPTION:  
+#    PARAMETERS:  
+#       RETURNS:  
+#-------------------------------------------------------------------------------
+function usage ()
+{
+	cat <<- EOT
+
+  Dodaje użytkownika i dopisuje do grupy sudo/wheel.
+  Ustawia hasło takie, jak user_name i wymusza zmianę
+  przy pierwszym logowaniu.
+
+  Usage :  ${0##/*/} [options] [--]
+
+  Options: 
+  -h|help       Display this message
+  -c            comment (aka useradd), default none
+  -u            user
+
+	EOT
+}    # ----------  end of function usage  ----------
+#---  FUNCTION  ----------------------------------------------------------------
+#          NAME:  get_distro_version
+#   DESCRIPTION:  
+#    PARAMETERS:  
+#       RETURNS:  
+#-------------------------------------------------------------------------------
+get_distro_version ()
+{
+    local full_string="$1"
+    local rval=$2
+    local _rval string_array
+
+    oIFS=$IFS
+    IFS='=' string_array=($full_string)
+    IFS=$oIFS
+    i=$((${#string_array[@]} - 1))        # last element
+    _rval=${string_array[$i]}
+    _rval=${_rval:1:-1}
+
+    eval $rval='"$_rval"'
+}    # ----------  end of function get_distr_version  ----------
+#===============================================================================
+#  MAIN SCRIPT
+#===============================================================================
+#-----------------------------------------------------------------------
+#  Handle command line arguments
+#-----------------------------------------------------------------------
+
+while getopts ":c:u:h" opt
+do
+  case $opt in
+    c) user_comment=${OPTARG} ;;
+    u) user_name=${OPTARG} ;;
+    h|help     )  usage; exit 0   ;;
+    \? )  echo -e "\n  Option does not exist : $OPTARG\n"
+          usage; exit 1   ;;
+  esac
+done
+shift $(($OPTIND-1))
+if [ -z "$user_name" ]; then
+    echo "Brak user_name"
+    exit 2
+fi
+
+lsb_release -si
+if [ $? -ne 0 ]; then
+    echo "Brak lsb_release?"
+    exit 1
+fi
+release=$(lsb_release -si | tr '[:upper:]' '[:lower:]')
+
+case $release in
+    centos|scientific)
+        useradd -c "$user_comment" $user_name
+        echo "$user_name:$user_name" | chpasswd
+        chage -d0 $user_name
+        usermod -aG wheel $user_name
+        id $user_name
+        ;;
+    debian)
+        useradd -s /bin/bash -m -c "$user_comment" $user_name
+        echo "$user_name:$user_name" | chpasswd
+        chage -d0 $user_name
+        usermod -aG sudo $user_name
+        id $user_name
+        ;;
+    *)
+        echo "Nierozpoznana dystrybucja: $release"
+        exit 1
+        ;;
+esac
+#-------------------------------------------------------------------------------
+exit 0
+#-------------------------------------------------------------------------------
