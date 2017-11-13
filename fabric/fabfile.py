@@ -81,7 +81,7 @@ class RunCmds():
 
     #  @parallel(pool_size=10) # Run on as many as 10 hosts at once
     #  do rozkumania, ew jako parametr
-    @parallel
+    @parallel(pool_size=50)
     def pexec(self):
         if pingit(env.host_string):
             for cmd in self.commands:
